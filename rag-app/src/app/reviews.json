@@ -1,0 +1,124 @@
+{
+  "reviews": [
+    {
+      "professor": "Dr. Emily Carter",
+      "subject": "Physics",
+      "stars": 4,
+      "review": "Dr. Carter explains complex concepts well but can be a bit fast-paced."
+    },
+    {
+      "professor": "Prof. Michael Lee",
+      "subject": "Chemistry",
+      "stars": 5,
+      "review": "Great professor! His classes are engaging and informative."
+    },
+    {
+      "professor": "Dr. Sarah Johnson",
+      "subject": "Mathematics",
+      "stars": 3,
+      "review": "Knowledgeable, but the lectures can be hard to follow at times."
+    },
+    {
+      "professor": "Prof. David Rodriguez",
+      "subject": "History",
+      "stars": 5,
+      "review": "Passionate about history and makes the class very interesting."
+    },
+    {
+      "professor": "Dr. Amy Thompson",
+      "subject": "Biology",
+      "stars": 2,
+      "review": "The material is difficult, and her teaching style doesn't help much."
+    },
+    {
+      "professor": "Prof. James Miller",
+      "subject": "English Literature",
+      "stars": 4,
+      "review": "Insightful lectures, though the workload is heavy."
+    },
+    {
+      "professor": "Dr. Linda Brown",
+      "subject": "Psychology",
+      "stars": 5,
+      "review": "Dr. Brown is amazing! She cares about her students and the subject."
+    },
+    {
+      "professor": "Prof. Robert Garcia",
+      "subject": "Economics",
+      "stars": 3,
+      "review": "Decent professor, but his lectures can be a bit dry."
+    },
+    {
+      "professor": "Dr. Jessica Wilson",
+      "subject": "Sociology",
+      "stars": 4,
+      "review": "Her classes are interesting, but the exams are tough."
+    },
+    {
+      "professor": "Prof. Daniel Martinez",
+      "subject": "Philosophy",
+      "stars": 5,
+      "review": "Engages students in deep discussions and encourages critical thinking."
+    },
+    {
+      "professor": "Dr. Karen Anderson",
+      "subject": "Political Science",
+      "stars": 3,
+      "review": "Interesting material, but the lectures can be monotonous."
+    },
+    {
+      "professor": "Prof. John Lewis",
+      "subject": "Computer Science",
+      "stars": 5,
+      "review": "Great professor! Makes complex topics accessible and fun."
+    },
+    {
+      "professor": "Dr. Patricia Moore",
+      "subject": "Anthropology",
+      "stars": 4,
+      "review": "Dr. Moore is knowledgeable, but sometimes hard to understand."
+    },
+    {
+      "professor": "Prof. William Harris",
+      "subject": "Engineering",
+      "stars": 3,
+      "review": "Solid professor, but not very approachable outside of class."
+    },
+    {
+      "professor": "Dr. Elizabeth Martinez",
+      "subject": "Environmental Science",
+      "stars": 5,
+      "review": "Passionate about the subject and always willing to help students."
+    },
+    {
+      "professor": "Prof. Christopher Clark",
+      "subject": "Statistics",
+      "stars": 2,
+      "review": "Difficult to follow his lectures, and the exams are very challenging."
+    },
+    {
+      "professor": "Dr. Laura Adams",
+      "subject": "Art History",
+      "stars": 4,
+      "review": "Dr. Adams makes art history come alive, though the readings are extensive."
+    },
+    {
+      "professor": "Prof. George Allen",
+      "subject": "Music Theory",
+      "stars": 5,
+      "review": "Incredible professor! His passion for music is contagious."
+    },
+    {
+      "professor": "Dr. Susan Clark",
+      "subject": "Law",
+      "stars": 3,
+      "review": "Challenging course with a lot of reading, but Dr. Clark is fair."
+    },
+    {
+      "professor": "Prof. Matthew King",
+      "subject": "Business Management",
+      "stars": 4,
+      "review": "Prof. King provides real-world examples that make the material relatable."
+    }
+  ]
+}
