@@ -14,41 +14,96 @@ export default function Home() {
   ]);
   const [message, setMessage] = useState("");
 
-  const sendMessage = async () => {
-    setMessages((messages) => [
-      ...messages,
-      { role: "user", content: message },
-      { role: "assistant", content: "" },
-    ]);
-    const response = fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify([...messages, { role: "user", content: message }]),
-    }).then(async (res) => {
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let result = "";
+  // const sendMessage = async () => {
+  //   if (!message.trim()) {
+  //     alert("Please enter a message: ", message);
+  //     return;
+  //   }
+  //   const newMessages = [...messages, { role: "user", content: message }];
 
-      return reader.read().then(function processText({ done, value }) {
-        if (done) {
-          return result;
-        }
-        const text = decoder.decode(value || new Uint8Array(), {
-          stream: true,
-        });
-        setMessages((messages) => {
-          let lastMessage = messages[messages.length - 1];
-          let otherMessages = messages.slice(0, messages.length - 1);
+  //   setMessages([...newMessages, { role: "assistant", content: "" }]);
+  //   setMessage(""); // Clear the input field
+
+  //   setMessages((messages) => [
+  //     ...messages,
+  //     { role: "user", content: message },
+  //     { role: "assistant", content: "" },
+  //   ]);
+
+  //   fetch("/api/chat", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify(newMessages),
+  //   }).then(async (res) => {
+  //     const reader = res.body.getReader();
+  //     const decoder = new TextDecoder();
+  //     let result = "";
+
+  //     return reader.read().then(function processText({ done, value }) {
+  //       if (done) {
+  //         return result;
+  //       }
+  //       const text = decoder.decode(value || new Uint8Array(), {
+  //         stream: true,
+  //       });
+  //       setMessages((messages) => {
+  //         let lastMessage = messages[messages.length - 1];
+  //         let otherMessages = messages.slice(0, messages.length - 1);
+  //         return [
+  //           ...otherMessages,
+  //           { ...lastMessage, content: lastMessage.content + text },
+  //         ];
+  //       });
+  //       return reader.read().then(processText);
+  //     });
+  //   });
+  // };
+
+  const sendMessage = async () => {
+    if (!message.trim()) {
+      alert("Please enter a message: " + message);
+      return;
+    }
+  
+    const newMessages = [...messages, { role: "user", content: message }];
+  
+    setMessages([...newMessages, { role: "assistant", content: "" }]);
+    setMessage(""); // Clear the input field
+  
+    try {
+      const response = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newMessages),
+      });
+  
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+  
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+  
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const text = decoder.decode(value, { stream: true });
+        setMessages((prevMessages) => {
+          const lastMessage = prevMessages[prevMessages.length - 1];
           return [
-            ...otherMessages,
+            ...prevMessages.slice(0, -1),
             { ...lastMessage, content: lastMessage.content + text },
           ];
         });
-        return reader.read().then(processText);
-      });
-    });
+      }
+    } catch (error) {
+      console.error("Error:", error);
+      alert("An error occurred while sending the message.");
+    }
   };
 
   return (
@@ -77,10 +132,16 @@ export default function Home() {
           ))}
         </div>
         <div className={cn("flex gap-2")}>
-          <Input type="message" placeholder="Send Message" onChange={(e)=>{
-            
-          }} />
-          <Button variant="outline">Send</Button>
+          <Input
+            type="message"
+            placeholder="Send Message"
+            onChange={(e) => {
+              setMessage(e.target.value);
+            }}
+          />
+          <Button variant="outline" onClick={sendMessage}>
+            Send
+          </Button>
         </div>
       </div>
     </section>

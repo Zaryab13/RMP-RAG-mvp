@@ -7,6 +7,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const pc = new Pinecone({
   apiKey: process.env.PINECONE_API_KEY,
 });
+const index = pc.index("rag").namespace("ns1");
 
 const systemPrompt = `You are an intelligent agent designed to help students find the best professors according to their specific needs. When a student asks about professors, your role is to understand their query, retrieve relevant data about professors, and present the top 3 professors who best match their criteria. Your responses should be concise, informative, and focused on the student's request.
 
@@ -81,56 +82,87 @@ Summary: Good for students with a solid foundation in Mathematics.`;
 
 export async function POST(req) {
   const data = await req.json();
-  const index = pc.index("rag").namespace("ns1");
 
-  const text = data[data.length - 1].content;
+  // Check the validity of the data
+  if (!Array.isArray(data) || data.length === 0) {
+    return NextResponse.json({ error: "Invalid input data" }, { status: 400 });
+  }
 
-  const embeddingModel = genAI.getGenerativeModel({
+  const lastItem = data[data.length - 1];
+
+  if (
+    !lastItem ||
+    typeof lastItem.content !== "string" ||
+    lastItem.content.trim() === ""
+  ) {
+    return NextResponse.json(
+      { error: "Invalid or empty content in last item" },
+      { status: 400 }
+    );
+  }
+
+  const text = lastItem.content.trim();
+
+  // Generate Embedding
+  let embedding;
+
+  const model = genAI.getGenerativeModel({
     model: "text-embedding-004",
   });
 
-  const response = await embeddingModel.embedContent({ content: text });
-  const embedding = response.embedding;
+  try {
+    const response = await model.embedContent(text);
 
+    embedding = response.embedding?.values;
+
+    if (!Array.isArray(embedding) || embedding.length === 0) {
+      throw new Error("Invalid embedding response");
+    }
+  } catch (error) {
+    console.error(
+      "Error in embedding content:",
+      "Embedding: ",
+      embedding,
+      response,
+      error
+    );
+    return NextResponse.json(
+      { error: "Failed to embed content" },
+      { status: 500 }
+    );
+  }
+
+  // Query Pinecone
   const results = await index.query({
     topK: 3,
     includeMetadata: true,
-    vector: embedding.data[0].embedding,
+    vector: embedding,
   });
 
-  let resultString =
-    "\n\n Returned results from vector db (done automatically): ";
+  let resultString = "\n\n Returned results from vector db: ";
   results.matches.forEach((match) => {
     resultString += `
-        Professor: ${match.id}
-        Review: ${match.metadata.review}
-        Subject: ${match.metadata.subject}
-        Stars: ${match.metadata.stars}
-        \n\n
+      Professor: ${match.id}
+      Review: ${match.metadata.review}
+      Subject: ${match.metadata.subject}
+      Stars: ${match.metadata.stars}
+      \n\n
     `;
   });
 
-  const lastMessage = data[data.length - 1];
-  const lastMessageContent = lastMessage.content + resultString;
-  const lastDataWithoutLastMessage = data.slice(0, data.length - 1);
+  // Prepare messages for Gemini API
+  const geminiMessages = [
+    { text: systemPrompt },
+    // Exclude the 'role' attribute
+    ...data.map((msg) => ({ text: msg.content })),
+    { text: lastItem.content + resultString },
+  ];
 
+  // Generate content stream from Gemini
   const geminiModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-  const completion = await geminiModel.generateContentStream([
-    { role: "user", parts: [{ text: systemPrompt }] },
-    ...lastDataWithoutLastMessage.map((msg) => ({
-      role: msg.role === "assistant" ? "model" : "user",
-      parts: [{ text: msg.content }],
-    })),
-    { role: "user", parts: [{ text: lastMessageContent }] },
-  ]);
+  const completion = await geminiModel.generateContentStream(geminiMessages);
 
   // Handle the stream
-  for await (const chunk of completion.stream) {
-    const chunkText = chunk.text();
-    // Here we can send each chunk to the client if needed
-    console.log(chunkText);
-  }
-
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
@@ -138,8 +170,7 @@ export async function POST(req) {
         for await (const chunk of completion.stream) {
           const content = chunk.text();
           if (content) {
-            const encodedText = encoder.encode(content);
-            controller.enqueue(encodedText);
+            controller.enqueue(encoder.encode(content));
           }
         }
       } catch (err) {
