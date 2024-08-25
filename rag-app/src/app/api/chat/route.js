@@ -44,6 +44,11 @@ Professor 3:
 Name: [Professor Name]
 Rating: [X/5]
 Summary: [Brief description highlighting strengths, teaching style, or relevant details.]
+Format the response as follows:
+- Start with the title.
+- List each professor's information on a new line.
+- Use bullet points or hyphens for each attribute (Name, Rating, Summary).
+- Separate different professors with an empty line.
 Maintain Neutrality:
 
 Avoid making subjective judgments. Present the data as it is, focusing on the students' requirements.

@@ -30,18 +30,20 @@ export default function Home() {
       { role: "assistant", content: "" },
     ]);
 
-    fetch("/api/chat", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(newMessages),
-    }).then(async (res) => {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(newMessages),
+      });
+
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let result = "";
 
-      return reader.read().then(function processText({ done, value }) {
+      const processText = async ({ done, value }) => {
         if (done) {
           return result;
         }
@@ -56,35 +58,47 @@ export default function Home() {
             { ...lastMessage, content: lastMessage.content + text },
           ];
         });
-        return reader.read().then(processText);
-      });
-    });
+        const nextResult = await reader.read();
+        return processText(nextResult);
+      };
+
+      await reader.read().then(processText);
+    } catch (error) {
+      console.error("Error sending message:", error);
+    }
   };
 
   return (
     <section className="w-[100vw] h-[100vh] flex items-center flex-col justify-center">
-      <div className="flex flex-col w-[500px] h-[700px] border-[1px_solid_black] p-2 gap-3">
+      <div className="flex flex-col w-full max-w-[880px] h-[800px] max-h-full border border-black p-2 gap-3 ">
         <div
-          className={cn("flex flex-col gap-2 grow  overflow-auto max-h-[100%]")}
+          className={cn(
+            "flex flex-col px-8 gap-2 grow  overflow-auto max-h-[100%]"
+          )}
         >
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={cn("flex", {
-                "items-start": message.role === "assistant",
-                "items-end": message.role === "user",
-              })}
-            >
+          {messages.map((message, index) => {
+            console.log(message);
+
+            return (
               <div
-                className={cn("text-white rounded-[16px] p-3", {
-                  "bg-primary": message.role === "assistant",
-                  "bg-secondary": message.role === "user",
+                key={index}
+                className={cn("flex", {
+                  "justify-start": message.role === "assistant",
+                  "justify-end": message.role === "user",
                 })}
               >
-                {message.content}
+                <div
+                  className={cn("rounded-[16px] p-3", {
+                    "bg-slate-700 text-slate-200": message.role === "assistant",
+                    "bg-slate-300 text-slatebg-slate-700":
+                      message.role === "user",
+                  })}
+                >
+                  {`${message.content}`}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <div className={cn("flex gap-2")}>
           <Input
