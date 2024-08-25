@@ -81,105 +81,89 @@ Rating: 3.5/5
 Summary: Good for students with a solid foundation in Mathematics.`;
 
 export async function POST(req) {
-  const data = await req.json();
-
-  // Check the validity of the data
-  if (!Array.isArray(data) || data.length === 0) {
-    return NextResponse.json({ error: "Invalid input data" }, { status: 400 });
-  }
-
-  const lastItem = data[data.length - 1];
-
-  if (
-    !lastItem ||
-    typeof lastItem.content !== "string" ||
-    lastItem.content.trim() === ""
-  ) {
-    return NextResponse.json(
-      { error: "Invalid or empty content in last item" },
-      { status: 400 }
-    );
-  }
-
-  const text = lastItem.content.trim();
-
-  // Generate Embedding
-  let embedding;
-
-  const model = genAI.getGenerativeModel({
-    model: "text-embedding-004",
-  });
-
   try {
-    const response = await model.embedContent(text);
+    const data = await req.json();
 
-    embedding = response.embedding?.values;
+    // Validate input data
+    if (!Array.isArray(data) || data.length === 0) {
+      return NextResponse.json(
+        { error: "Invalid input data" },
+        { status: 400 }
+      );
+    }
+
+    // Get the last message content
+    const lastMessage = data[data.length - 1];
+    const text = lastMessage.content;
+
+    // Generate embedding using Google Generative AI
+    const embeddingModel = genAI.getGenerativeModel({
+      model: "text-embedding-004",
+    });
+    const embeddingResponse = await embeddingModel.embedContent(text);
+    const embedding = embeddingResponse.embedding?.values;
 
     if (!Array.isArray(embedding) || embedding.length === 0) {
       throw new Error("Invalid embedding response");
     }
-  } catch (error) {
-    console.error(
-      "Error in embedding content:",
-      "Embedding: ",
-      embedding,
-      response,
-      error
-    );
-    return NextResponse.json(
-      { error: "Failed to embed content" },
-      { status: 500 }
-    );
-  }
 
-  // Query Pinecone
-  const results = await index.query({
-    topK: 3,
-    includeMetadata: true,
-    vector: embedding,
-  });
+    // Query Pinecone with the generated embedding
+    const results = await index.query({
+      topK: 5,
+      includeMetadata: true,
+      vector: embedding,
+    });
 
-  let resultString = "\n\n Returned results from vector db: ";
-  results.matches.forEach((match) => {
-    resultString += `
+    // Format the results from Pinecone
+    let resultString = "";
+    results.matches.forEach((match) => {
+      resultString += `
+      Returned Results:
       Professor: ${match.id}
       Review: ${match.metadata.review}
       Subject: ${match.metadata.subject}
       Stars: ${match.metadata.stars}
-      \n\n
-    `;
-  });
+      \n\n`;
+    });
 
-  // Prepare messages for Gemini API
-  const geminiMessages = [
-    { text: systemPrompt },
-    // Exclude the 'role' attribute
-    ...data.map((msg) => ({ text: msg.content })),
-    { text: lastItem.content + resultString },
-  ];
+    // Prepare messages for Google Gemini
+    const lastMessageContent = lastMessage.content + resultString;
+    const messages = [
+      { text: systemPrompt },
+      ...data.slice(0, data.length - 1).map((msg) => ({ text: msg.content })),
+      { text: lastMessageContent },
+    ];
 
-  // Generate content stream from Gemini
-  const geminiModel = genAI.getGenerativeModel({ model: "gemini-pro" });
-  const completion = await geminiModel.generateContentStream(geminiMessages);
+    // Generate content stream using Google Gemini
+    const geminiModel = genAI.getGenerativeModel({ model: "gemini-pro" });
+    const completion = await geminiModel.generateContentStream(messages);
 
-  // Handle the stream
-  const stream = new ReadableStream({
-    async start(controller) {
-      const encoder = new TextEncoder();
-      try {
-        for await (const chunk of completion.stream) {
-          const content = chunk.text();
-          if (content) {
-            controller.enqueue(encoder.encode(content));
+    // Create a readable stream for the response
+    const stream = new ReadableStream({
+      async start(controller) {
+        const encoder = new TextEncoder();
+        try {
+          for await (const chunk of completion.stream) {
+            const content = chunk.text();
+            if (content) {
+              const text = encoder.encode(content);
+              controller.enqueue(text);
+            }
           }
+        } catch (err) {
+          controller.error(err);
+        } finally {
+          controller.close();
         }
-      } catch (err) {
-        controller.error(err);
-      } finally {
-        controller.close();
-      }
-    },
-  });
+      },
+    });
 
-  return new NextResponse(stream);
+    return new NextResponse(stream);
+  } catch (error) {
+    console.error("Error in processing request:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }

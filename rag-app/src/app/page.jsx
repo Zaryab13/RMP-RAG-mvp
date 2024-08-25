@@ -14,96 +14,51 @@ export default function Home() {
   ]);
   const [message, setMessage] = useState("");
 
-  // const sendMessage = async () => {
-  //   if (!message.trim()) {
-  //     alert("Please enter a message: ", message);
-  //     return;
-  //   }
-  //   const newMessages = [...messages, { role: "user", content: message }];
-
-  //   setMessages([...newMessages, { role: "assistant", content: "" }]);
-  //   setMessage(""); // Clear the input field
-
-  //   setMessages((messages) => [
-  //     ...messages,
-  //     { role: "user", content: message },
-  //     { role: "assistant", content: "" },
-  //   ]);
-
-  //   fetch("/api/chat", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify(newMessages),
-  //   }).then(async (res) => {
-  //     const reader = res.body.getReader();
-  //     const decoder = new TextDecoder();
-  //     let result = "";
-
-  //     return reader.read().then(function processText({ done, value }) {
-  //       if (done) {
-  //         return result;
-  //       }
-  //       const text = decoder.decode(value || new Uint8Array(), {
-  //         stream: true,
-  //       });
-  //       setMessages((messages) => {
-  //         let lastMessage = messages[messages.length - 1];
-  //         let otherMessages = messages.slice(0, messages.length - 1);
-  //         return [
-  //           ...otherMessages,
-  //           { ...lastMessage, content: lastMessage.content + text },
-  //         ];
-  //       });
-  //       return reader.read().then(processText);
-  //     });
-  //   });
-  // };
-
   const sendMessage = async () => {
     if (!message.trim()) {
-      alert("Please enter a message: " + message);
+      alert("Please enter a message: ", message);
       return;
     }
-  
     const newMessages = [...messages, { role: "user", content: message }];
-  
+
     setMessages([...newMessages, { role: "assistant", content: "" }]);
     setMessage(""); // Clear the input field
-  
-    try {
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(newMessages),
-      });
-  
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-  
-      const reader = response.body.getReader();
+
+    setMessages((messages) => [
+      ...messages,
+      { role: "user", content: message },
+      { role: "assistant", content: "" },
+    ]);
+
+    fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(newMessages),
+    }).then(async (res) => {
+      const reader = res.body.getReader();
       const decoder = new TextDecoder();
-  
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        const text = decoder.decode(value, { stream: true });
-        setMessages((prevMessages) => {
-          const lastMessage = prevMessages[prevMessages.length - 1];
+      let result = "";
+
+      return reader.read().then(function processText({ done, value }) {
+        if (done) {
+          return result;
+        }
+        const text = decoder.decode(value || new Uint8Array(), {
+          stream: true,
+        });
+        setMessages((messages) => {
+          let lastMessage = messages[messages.length - 1];
+          let otherMessages = messages.slice(0, messages.length - 1);
           return [
-            ...prevMessages.slice(0, -1),
+            ...otherMessages,
             { ...lastMessage, content: lastMessage.content + text },
           ];
         });
-      }
-    } catch (error) {
-      console.error("Error:", error);
-      alert("An error occurred while sending the message.");
-    }
+        return reader.read().then(processText);
+      });
+    });
   };
 
   return (
@@ -134,6 +89,7 @@ export default function Home() {
         <div className={cn("flex gap-2")}>
           <Input
             type="message"
+            value={message}
             placeholder="Send Message"
             onChange={(e) => {
               setMessage(e.target.value);
