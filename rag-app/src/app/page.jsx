@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import {FaUser , FaRobot} from 'react-icons/fa'
 
 export default function Home() {
   const [messages, setMessages] = useState([
@@ -69,51 +70,56 @@ export default function Home() {
   };
 
   return (
-    <section className="w-[100vw] h-[100vh] flex items-center flex-col justify-center">
-      <div className="flex flex-col w-full max-w-[880px] h-[800px] max-h-full border border-black p-2 gap-3 ">
-        <div
-          className={cn(
-            "flex flex-col px-8 gap-2 grow  overflow-auto max-h-[100%]"
-          )}
-        >
-          {messages.map((message, index) => {
-            console.log(message);
-
-            return (
-              <div
-                key={index}
-                className={cn("flex", {
-                  "justify-start": message.role === "assistant",
-                  "justify-end": message.role === "user",
-                })}
-              >
-                <div
-                  className={cn("rounded-[16px] p-3", {
-                    "bg-slate-700 text-slate-200": message.role === "assistant",
-                    "bg-slate-300 text-slatebg-slate-700":
-                      message.role === "user",
-                  })}
-                >
-                  {`${message.content}`}
-                </div>
+    <section className="w-full min-h-screen bg-gradient-to-br from-[#FFB84C] to-[#A459D1] p-4 flex items-center justify-center">
+    <div className="w-full max-w-4xl h-[600px] bg-white rounded-lg shadow-xl flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={cn("flex items-end", {
+              "justify-start": message.role === "assistant",
+              "justify-end": message.role === "user",
+            })}
+          >
+            {message.role === "assistant" && (
+              <div className="w-8 h-8 rounded-full border border-[#A459D1]  flex items-center justify-center mr-2">
+                <FaRobot className="text-[#A459D1] text-2xl " />
               </div>
-            );
-          })}
-        </div>
-        <div className={cn("flex gap-2")}>
+            )}
+            <div
+              className={cn("max-w-[70%] rounded-xl px-4 py-3", {
+                "bg-[#A459D1] text-white": message.role === "assistant",
+                "bg-[#F266AB] text-white": message.role === "user",
+              })}
+            >
+              <p className="text-sm">{message.content}</p>
+            </div>
+            {message.role === "user" && (
+              <div className="w-8 h-8 rounded-full border border-[#F266AB] flex items-center justify-center ml-2">
+                <FaUser className="text-[#F266AB] text-1xl" />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      <div className="p-4 border-t border-gray-200">
+        <div className="flex space-x-2">
           <Input
-            type="message"
+            type="text"
             value={message}
-            placeholder="Send Message"
-            onChange={(e) => {
-              setMessage(e.target.value);
-            }}
+            onChange={(e) => setMessage(e.target.value)}
+            placeholder="Type your message..."
+            className="flex-1 focus:ring-[#FFB84C] focus:border-[#FFB84C]"
           />
-          <Button variant="outline" onClick={sendMessage}>
+          <Button
+            onClick={sendMessage}
+            className="bg-[#FFB84C] hover:bg-[#F266AB] text-white font-bold py-2 px-4 rounded-xl transition duration-300"
+          >
             Send
           </Button>
         </div>
       </div>
-    </section>
+    </div>
+  </section>
   );
 }
