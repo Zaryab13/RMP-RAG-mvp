@@ -17,19 +17,13 @@ export default function Home() {
 
   const sendMessage = async () => {
     if (!message.trim()) {
-      alert("Please enter a message: ", message);
+      alert("Please enter a message");
       return;
     }
     const newMessages = [...messages, { role: "user", content: message }];
 
-    setMessages([...newMessages, { role: "assistant", content: "" }]);
+    setMessages(newMessages);
     setMessage(""); // Clear the input field
-
-    setMessages((messages) => [
-      ...messages,
-      { role: "user", content: message },
-      { role: "assistant", content: "" },
-    ]);
 
     try {
       const res = await fetch("/api/chat", {
@@ -43,6 +37,8 @@ export default function Home() {
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let result = "";
+
+      setMessages([...newMessages, { role: "assistant", content: "" }]);
 
       const processText = async ({ done, value }) => {
         if (done) {
@@ -68,7 +64,7 @@ export default function Home() {
       console.error("Error sending message:", error);
     }
   };
-
+  
   return (
     <section className="w-full min-h-screen bg-gradient-to-br from-[#FFB84C] to-[#A459D1] p-4 flex items-center justify-center">
     <div className="w-full max-w-4xl h-[600px] bg-white rounded-lg shadow-xl flex flex-col">
